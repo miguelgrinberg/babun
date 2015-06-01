@@ -8,9 +8,14 @@ def execute() {
     boolean downloadOnly
     try {
         checkArguments()
-        (repoFolder, inputFolder, outputFolder, cygwinFolder, pkgsFile, downloadOnly) = initEnvironment()
+        (repoFolder, inputFolder, outputFolder, cygwinFolder, pkgsFile, bitVersion, downloadOnly) = initEnvironment()
+        //if(cygwinFolder.exists()) {
+        //    println "Skipping Cygwin installation"
+        //    return
+        //}
+
         // install cygwin
-        File cygwinInstaller = downloadCygwinInstaller(outputFolder)
+        File cygwinInstaller = downloadCygwinInstaller(bitVersion, outputFolder)
         if(downloadOnly) {
             println "downloadOnly flag set to true - Cygwin installation skipped.";
             return
@@ -29,8 +34,8 @@ def execute() {
 }
 
 def checkArguments() {
-    if (this.args.length != 5) {
-        error("Usage: cygwin.groovy <repo_folder> <input_folder> <output_folder> <pkgs_file> <download_only>")
+    if (this.args.length != 6) {
+        error("Usage: cygwin.groovy <repo_folder> <input_folder> <output_folder> <pkgs_file> <bit_version> <download_only>")
         exit(-1)
     }
 }
@@ -40,25 +45,24 @@ def initEnvironment() {
     File inputFolder = new File(this.args[1])
     File outputFolder = new File(this.args[2])
     File pkgsFile = new File(this.args[3]) 
-    boolean downloadOnly =  Boolean.parseBoolean(this.args[4])
+    String bitVersion = this.args[4]
+    boolean downloadOnly =  Boolean.parseBoolean(this.args[5])
     if (!outputFolder.exists()) {
         outputFolder.mkdir()
     }    
     File cygwinFolder = new File(outputFolder, "cygwin")
-    if(cygwinFolder.exists()) {
-        println "Skipping Cygwin installation"
-        return 
+    if(!cygwinFolder.exists()) {
+        cygwinFolder.mkdir()
     }
-    cygwinFolder.mkdir()
-    return [repoFolder, inputFolder, outputFolder, cygwinFolder, pkgsFile, downloadOnly]
+    return [repoFolder, inputFolder, outputFolder, cygwinFolder, pkgsFile, bitVersion, downloadOnly]
 }
 
-def downloadCygwinInstaller(File outputFolder) {    
-    File cygwinInstaller = new File(outputFolder, "setup-x86.exe")
+def downloadCygwinInstaller(String bitVersion, File outputFolder) {    
+    File cygwinInstaller = new File(outputFolder, "setup-${bitVersion}.exe")
     if(!cygwinInstaller.exists()) {
         println "Downloading Cygwin installer"
         use(FileBinaryCategory) {
-            cygwinInstaller << "http://cygwin.com/setup-x86.exe".toURL()
+            cygwinInstaller << "http://cygwin.com/setup-${bitVersion}.exe".toURL()
         }
     } else {
         println "Cygwin installer alread exists, skipping the download!";
@@ -73,6 +77,7 @@ def installCygwin(File cygwinInstaller, File repoFolder, File cygwinFolder, File
     println "Packages to install: ${pkgs}"
     String installCommand = "\"${cygwinInstaller.absolutePath}\" " +
             "--quiet-mode " +
+            "--no-admin " +
             "--local-install " +
             "--local-package-dir \"${repoFolder.absolutePath}\" " +
             "--root \"${cygwinFolder.absolutePath}\" " +

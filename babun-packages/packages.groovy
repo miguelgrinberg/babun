@@ -9,8 +9,8 @@ def execute() {
     String setupVersion
     try {
         checkArguments()
-        (confFolder, outputFolder, setupVersion) = initEnvironment()
-        downloadPackages(confFolder, outputFolder, "x86")
+        (confFolder, outputFolder, bitVersion, setupVersion) = initEnvironment()
+        downloadPackages(confFolder, outputFolder, bitVersion)
     } catch (Exception ex) {
         error("Unexpected error occurred: " + ex + " . Quitting!")
         ex.printStackTrace()
@@ -19,8 +19,8 @@ def execute() {
 }
 
 def checkArguments() {
-    if (this.args.length != 2) {
-        error("Usage: packages.groovy <conf_folder> <output_folder>", true)
+    if (this.args.length != 3) {
+        error("Usage: packages.groovy <conf_folder> <output_folder> <bit_version>", true)
         exit(-1)
     }
 }
@@ -30,8 +30,9 @@ def initEnvironment() {
     File outputFolder = new File(this.args[1])
     if (!outputFolder.exists()) {
         outputFolder.mkdir()
-    }    
-    return [confFolder, outputFolder]
+    }
+    String bitVersion = this.args[2]
+    return [confFolder, outputFolder, bitVersion]
 }
 
 def downloadPackages(File confFolder, File outputFolder, String bitVersion) {

@@ -64,12 +64,18 @@ if "%MIRROR%"=="" (
 echo [babun] Upgrading Cygwin from %MIRROR%
 echo [babun] Writing data to %DIST_DIR%
 
-"%BASH%" -c "source ~/.babunrc; /bin/rm.exe -f '%DIST_DIR%/setup-x86.exe' '%DIST_DIR%/cygwin.version'" || goto :ERROR
+"%BASH%" -c "uname -m > '%DIST_DIR%\cygwin.bitversion'"
+set /p CYGWIN_BITVERSION=<"%DIST_DIR%/cygwin.bitversion"
+if NOT "%CYGWIN_BITVERSION%"=="x86_64" (
+    set /p CYGWIN_BITVERSION=x86
+)
+
+"%BASH%" -c "source ~/.babunrc; /bin/rm.exe -f '%DIST_DIR%/setup-%CYGWIN_BITVERSION%.exe' '%DIST_DIR%/cygwin.version'" || goto :ERROR
 echo download cyg version
 "%BASH%" -c "source ~/.babunrc; /bin/wget.exe --directory-prefix='%DIST_DIR%' https://raw.githubusercontent.com/babun/babun-cygwin/master/cygwin.version" || goto :ERROR
 set /p CYGWIN_VERSION=<"%DIST_DIR%/cygwin.version"
 echo [babun] Downloading Cygwin %CYGWIN_VERSION%
-"%BASH%" -c "source ~/.babunrc; /bin/wget.exe --directory-prefix='%DIST_DIR%' https://raw.githubusercontent.com/babun/babun-cygwin/%CYGWIN_VERSION%/babun-cygwin/setup-x86.exe" || goto :ERROR
+"%BASH%" -c "source ~/.babunrc; /bin/wget.exe --directory-prefix='%DIST_DIR%' https://raw.githubusercontent.com/babun/babun-cygwin/%CYGWIN_VERSION%/babun-cygwin/setup-%CYGWIN_BITVERSION%.exe" || goto :ERROR
 
 :SETUPRC
 echo [babun] Preparing setup.rc config
@@ -107,13 +113,13 @@ if "%PROXY%" == "" (
 :DIRECTDOWNLOAD
 cd "%DIST_DIR%"
 echo [babun] Executing Cygwin upgrade without proxy
-setup-x86.exe --quiet-mode --upgrade-also --site="%MIRROR%" --no-admin --no-shortcuts --no-startmenu --no-desktop --root="%CYGWIN_HOME%" --local-package-dir="%DIST_DIR%" || goto :ERROR
+setup-%CYGWIN_BITVERSION%.exe --quiet-mode --upgrade-also --site="%MIRROR%" --no-admin --no-shortcuts --no-startmenu --no-desktop --root="%CYGWIN_HOME%" --local-package-dir="%DIST_DIR%" || goto :ERROR
 GOTO VERSION
 
 :PROXYDOWNLOAD
 cd "%DIST_DIR%"
 echo [babun] Executing Cygwin upgrade with proxy=%PROXY%
-setup-x86.exe --quiet-mode --upgrade-also --site="%MIRROR%" --no-admin --no-shortcuts --no-startmenu --no-desktop --root="%CYGWIN_HOME%" --local-package-dir="%DIST_DIR%" --proxy="%PROXY%" || goto :ERROR
+setup-%CYGWIN_BITVERSION%.exe --quiet-mode --upgrade-also --site="%MIRROR%" --no-admin --no-shortcuts --no-startmenu --no-desktop --root="%CYGWIN_HOME%" --local-package-dir="%DIST_DIR%" --proxy="%PROXY%" || goto :ERROR
 GOTO VERSION
 
 :VERSION
